@@ -231,4 +231,12 @@ class RegisterTest {
         Assertions.assertEquals(register.getA(), 0xFC - 0b00010000);
         Assertions.assertEquals(register.getF(), 0b01110000);
     }
+
+    @Test
+    void and() {
+        register.setA((short)(0xFC));
+        register.setB((short)(0xCE));
+        register.execute(Instruction.AND, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0xFC & 0xCE);
+    }
 }

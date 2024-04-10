@@ -293,6 +293,20 @@ public class Register {
                 }
             }
             case AND -> {
+                switch (instructionTarget) {
+                    case A -> setA((short)(getA() & getA() & 0xFF));
+                    case B -> setA((short)(getA() & getB() & 0xFF));
+                    case C -> setA((short)(getA() & getC() & 0xFF));
+                    case D -> setA((short)(getA() & getD() & 0xFF));
+                    case E -> setA((short)(getA() & getE() & 0xFF));
+                    case F -> setA((short)(getA() & getF() & 0xFF));
+                    case H -> setA((short)(getA() & getH() & 0xFF));
+                    case L -> setA((short)(getA() & getL() & 0xFF));
+                    case AF -> setA((short)(getA() & getAf() & 0xFF));
+                    case BC -> setA((short)(getA() & getBc() & 0xFF));
+                    case DE -> setA((short)(getA() & getDe() & 0xFF));
+                    case HL -> setA((short)(getA() & getHl() & 0xFF));
+                }
             }
             case OR -> {
             }

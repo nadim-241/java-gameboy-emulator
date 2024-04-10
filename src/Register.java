@@ -185,14 +185,28 @@ public class Register {
 
     private void sub(int value) {
         int result = getA() - value;
+        setSubtractionFlag(true);
+        setZeroFlag(result == 0);
+        setCarryFlag(result > UINT_8_MAX || result < 0);
+        setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
+
         if(result < 0) {
             result += 256;
         }
+
+        setA((short)(result & 0xFF));
+    }
+
+    private void sbc(int value) {
+        int result = getA() - value;
         setSubtractionFlag(true);
         setZeroFlag(result == 0);
-        setCarryFlag(result > UINT_8_MAX);
-        setHalfCarryFlag(((getA() & 0xF) + (value & 0xF)) > 0xF);
-
+        setCarryFlag(result > UINT_8_MAX || result < 0);
+        setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
+        result -= getCarryFlag();
+        if(result < 0) {
+            result += 256;
+        }
         setA((short)(result & 0xFF));
     }
 
@@ -263,6 +277,20 @@ public class Register {
                 }
             }
             case SBC -> {
+                switch (instructionTarget) {
+                    case A -> sbc(getA());
+                    case B -> sbc(getB());
+                    case C -> sbc(getC());
+                    case D -> sbc(getD());
+                    case E -> sbc(getE());
+                    case F -> throw new RuntimeException("You can't select register F as a target for SBC");
+                    case H -> sbc(getH());
+                    case L -> sbc(getL());
+                    case AF -> sbc(getAf());
+                    case BC -> sbc(getBc());
+                    case DE -> sbc(getDe());
+                    case HL -> sbc(getHl());
+                }
             }
             case AND -> {
             }

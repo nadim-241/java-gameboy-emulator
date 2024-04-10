@@ -221,6 +221,14 @@ class RegisterTest {
         register.setB((short)0x04);
         register.execute(Instruction.SUB, InstructionTarget.B);
         Assertions.assertEquals(register.getA(), 0xFC);
-        Assertions.assertEquals(register.getF(), 0b01000000);
+        Assertions.assertEquals(register.getF(), 0b01110000);
+    }
+
+    @Test
+    void sbc() {
+        register.setB((short)0x04);
+        register.execute(Instruction.SBC, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0xFC - 0b00010000);
+        Assertions.assertEquals(register.getF(), 0b01110000);
     }
 }

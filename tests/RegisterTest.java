@@ -255,4 +255,30 @@ class RegisterTest {
         register.execute(Instruction.XOR, InstructionTarget.B);
         Assertions.assertEquals(register.getA(), 0xFC ^ 0xCE);
     }
+
+    @Test
+    void rra() {
+        register.setA((short)0b01100000);
+        register.execute(Instruction.RRA, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b00110000);
+        Assertions.assertEquals(register.getCarryFlag(), 0b0);
+
+        register.setA((short)0b01100001);
+        register.execute(Instruction.RRA, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b00110000);
+        Assertions.assertEquals(register.getCarryFlag(), 0b00010000);
+    }
+
+    @Test
+    void rla() {
+        register.setA((short)0b01100000);
+        register.execute(Instruction.RLA, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b11000000);
+        Assertions.assertEquals(register.getCarryFlag(), 0b0);
+
+        register.setA((short)0b11100001);
+        register.execute(Instruction.RLA, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b11000010);
+        Assertions.assertEquals(register.getCarryFlag(), 0b00010000);
+    }
 }

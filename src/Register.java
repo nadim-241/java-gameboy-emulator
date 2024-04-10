@@ -210,6 +210,14 @@ public class Register {
         setA((short)(result & 0xFF));
     }
 
+    private void cp(int value) {
+        int result = getA() - value;
+        setSubtractionFlag(true);
+        setZeroFlag(result == 0);
+        setCarryFlag(result > UINT_8_MAX || result < 0);
+        setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
+    }
+
     public void execute(Instruction instruction, InstructionTarget instructionTarget) {
         switch (instruction) {
             case ADD -> {
@@ -341,18 +349,140 @@ public class Register {
                 }
             }
             case CP -> {
+                switch (instructionTarget) {
+                    case A -> cp(getA());
+                    case B -> cp(getB());
+                    case C -> cp(getC());
+                    case D -> cp(getD());
+                    case E -> cp(getE());
+                    case F -> throw new RuntimeException("You can't select register F as a target for CP");
+                    case H -> cp(getH());
+                    case L -> cp(getL());
+                    case AF -> cp(getAf());
+                    case BC -> cp(getBc());
+                    case DE -> cp(getDe());
+                    case HL -> cp(getHl());
+                }
             }
             case INC -> {
+                switch (instructionTarget) {
+                    case A -> setA((short)((getA() + 1) & 0xFF));
+                    case B -> setB((short)((getA() + 1) & 0xFF));
+                    case C -> setC((short)((getA() + 1) & 0xFF));
+                    case D -> setD((short)((getA() + 1) & 0xFF));
+                    case E -> setE((short)((getA() + 1) & 0xFF));
+                    case F -> throw new RuntimeException("You can't select register F as a target for INC");
+                    case H -> setH((short)((getA() + 1) & 0xFF));
+                    case L -> setL((short)((getA() + 1) & 0xFF));
+                    case AF -> setAf((short)((getA() + 1) & 0xFFFF));
+                    case BC -> setBc((short)((getA() + 1) & 0xFFFF));
+                    case DE -> setDe((short)((getA() + 1) & 0xFFFF));
+                    case HL -> setHl((short)((getA() + 1) & 0xFFFF));
+                }
             }
             case DEC -> {
+                switch (instructionTarget) {
+                    case A -> {
+                        int result = getA() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setA((short)(result & 0xFF));
+                    }
+                    case B -> {
+                        int result = getB() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setB((short)(result & 0xFF));
+                    }
+                    case C -> {
+                        int result = getC() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setC((short)(result & 0xFF));
+                    }
+                    case D -> {
+                        int result = getD() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setD((short)(result & 0xFF));
+                    }
+                    case E -> {
+                        int result = getE() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setE((short)(result & 0xFF));
+                    }
+                    case F -> throw new RuntimeException("You can't select F as a target for DEC");
+                    case H -> {
+                        int result = getH() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setH((short)(result & 0xFF));
+                    }
+                    case L -> {
+                        int result = getL() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setL((short)(result & 0xFF));
+                    }
+                    case AF -> {
+                        int result = getAf() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setAf((short)(result & 0xFF));
+                    }
+                    case BC -> {
+                        int result = getBc() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setBc((short)(result & 0xFF));
+                    }
+                    case DE -> {
+                        int result = getDe() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setDe((short)(result & 0xFF));
+                    }
+                    case HL -> {
+                        int result = getHl() - 1;
+                        if(result < 0) {
+                            result += 256;
+                        }
+                        setHl((short)(result & 0xFF));
+                    }
+                }
             }
             case CCF -> {
+                setCarryFlag(getCarryFlag() != 0b00010000);
             }
             case SCF -> {
+                setCarryFlag(true);
             }
             case RRA -> {
+                boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                int aValue = getA();
+                int mask = flag ? 0b10000000 : 0b0;
+                setA((short)((aValue >> 1) | mask));
+                int carryValue = aValue & 0b00000001;
+                setCarryFlag(carryValue == 1);
             }
             case RLA -> {
+                boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                int aValue = getA();
+                int mask = flag ? 0b10000000 : 0b0;
+                setA((short)(((aValue << 1) & 0xFF) | mask));
+                int carryValue = aValue & 0b10000000;
+                setCarryFlag(carryValue == 0b10000000);
             }
             case RRCA -> {
             }

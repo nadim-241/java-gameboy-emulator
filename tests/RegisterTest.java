@@ -239,4 +239,20 @@ class RegisterTest {
         register.execute(Instruction.AND, InstructionTarget.B);
         Assertions.assertEquals(register.getA(), 0xFC & 0xCE);
     }
+
+    @Test
+    void or() {
+        register.setA((short)(0xFC));
+        register.setB((short)(0xCE));
+        register.execute(Instruction.OR, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0xFC | 0xCE);
+    }
+
+    @Test
+    void xor() {
+        register.setA((short)(0xFC));
+        register.setB((short)(0xCE));
+        register.execute(Instruction.XOR, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0xFC ^ 0xCE);
+    }
 }

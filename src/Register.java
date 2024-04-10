@@ -152,7 +152,7 @@ public class Register {
         }
     }
 
-    private void add(short value) {
+    private void add(int value) {
         int result = getA() + value;
         setSubtractionFlag(false);
         setZeroFlag(result == 0);
@@ -162,7 +162,7 @@ public class Register {
         setA((short) (result & 0xFF));
     }
 
-    private void addHL(short value) {
+    private void addHL(int value) {
         int result = getHl() + value;
         setSubtractionFlag(false);
         setZeroFlag(result == 0);
@@ -172,13 +172,26 @@ public class Register {
         setHl((short) (result & 0xFFFF));
     }
 
-    private void adc(short value) {
+    private void adc(int value) {
         int result = getA() + value;
         setSubtractionFlag(false);
         setZeroFlag(result == 0);
         setCarryFlag(result > UINT_8_MAX);
         setHalfCarryFlag(((getA() & 0xF) + (value & 0xF)) > 0xF);
         result += getCarryFlag();
+
+        setA((short)(result & 0xFF));
+    }
+
+    private void sub(int value) {
+        int result = getA() - value;
+        if(result < 0) {
+            result += 256;
+        }
+        setSubtractionFlag(true);
+        setZeroFlag(result == 0);
+        setCarryFlag(result > UINT_8_MAX);
+        setHalfCarryFlag(((getA() & 0xF) + (value & 0xF)) > 0xF);
 
         setA((short)(result & 0xFF));
     }
@@ -195,6 +208,10 @@ public class Register {
                     case F -> throw new RuntimeException("You can't select register F as a target for ADD");
                     case H -> add(getH());
                     case L -> add(getL());
+                    case AF -> add(getAf());
+                    case BC -> add(getBc());
+                    case DE -> add(getDe());
+                    case HL -> add(getHl());
                 }
             }
             case ADDHL -> {
@@ -207,6 +224,10 @@ public class Register {
                     case F -> throw new RuntimeException("You can't select register F as a target for ADDHL");
                     case H -> addHL(getH());
                     case L -> addHL(getL());
+                    case AF -> addHL(getAf());
+                    case BC -> addHL(getBc());
+                    case DE -> addHL(getDe());
+                    case HL -> addHL(getHl());
                 }
             }
             case ADC -> {
@@ -219,9 +240,27 @@ public class Register {
                     case F -> throw new RuntimeException("You can't select register F as a target for ADC");
                     case H -> adc(getH());
                     case L -> adc(getL());
+                    case AF -> adc(getAf());
+                    case BC -> adc(getBc());
+                    case DE -> adc(getDe());
+                    case HL -> adc(getHl());
                 }
             }
             case SUB -> {
+                switch (instructionTarget) {
+                    case A -> sub(getA());
+                    case B -> sub(getB());
+                    case C -> sub(getC());
+                    case D -> sub(getD());
+                    case E -> sub(getE());
+                    case F -> throw new RuntimeException("You can't select register F as a target for SUB");
+                    case H -> sub(getH());
+                    case L -> sub(getL());
+                    case AF -> sub(getAf());
+                    case BC -> sub(getBc());
+                    case DE -> sub(getDe());
+                    case HL -> sub(getHl());
+                }
             }
             case SBC -> {
             }

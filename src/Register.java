@@ -485,8 +485,16 @@ public class Register {
                 setCarryFlag(carryValue == 0b10000000);
             }
             case RRCA -> {
+                int aValue = getA();
+                int mask = aValue & 0b1;
+                int result = (aValue >> 1) | (mask << 7);
+                setA((short)(result));
             }
             case RRLA -> {
+                int aValue = getA();
+                int mask = aValue & 0b10000000;
+                int result = (aValue << 1) | (mask >> 7);
+                setA((short)(result));
             }
             case CPL -> {
             }

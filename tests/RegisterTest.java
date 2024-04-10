@@ -281,4 +281,18 @@ class RegisterTest {
         Assertions.assertEquals(register.getA(), 0b11000010);
         Assertions.assertEquals(register.getCarryFlag(), 0b00010000);
     }
+
+    @Test
+    void rrca() {
+        register.setA((short)0b00010001);
+        register.execute(Instruction.RRCA, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b10001000);
+    }
+
+    @Test
+    void rrla() {
+        register.setA((short)0b10010001);
+        register.execute(Instruction.RRLA, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b00100011);
+    }
 }

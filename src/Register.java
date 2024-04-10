@@ -1,6 +1,7 @@
 public class Register {
 
     private static final int UINT_8_MAX = 255;
+    private static final int UINT_16_MAX = 65535;
     private short a;
     private short b;
     private short c;
@@ -115,22 +116,16 @@ public class Register {
         setL((short) (value & 0x00FF));
     }
 
-    private void add(short value) {
-        int result = getA() + value;
-        setSubtractionFlag(false);
-        setZeroFlag(result == 0);
-        setCarryFlag(result > UINT_8_MAX);
-        setHalfCarryFlag(((getA() & 0xF) + (value & 0xF)) > 0xF);
-
-        setA((short) (result & 0xFF));
-    }
-
     public void setCarryFlag(boolean value) {
         if (value) {
             f = (short) (f | 0b00010000);
         } else {
             f = (short) (f & 0b11101111);
         }
+    }
+
+    public short getCarryFlag() {
+        return (short)(f & 0b00010000);
     }
 
     public void setHalfCarryFlag(boolean value) {
@@ -157,46 +152,74 @@ public class Register {
         }
     }
 
+    private void add(short value) {
+        int result = getA() + value;
+        setSubtractionFlag(false);
+        setZeroFlag(result == 0);
+        setCarryFlag(result > UINT_8_MAX);
+        setHalfCarryFlag(((getA() & 0xF) + (value & 0xF)) > 0xF);
+
+        setA((short) (result & 0xFF));
+    }
+
+    private void addHL(short value) {
+        int result = getHl() + value;
+        setSubtractionFlag(false);
+        setZeroFlag(result == 0);
+        setCarryFlag(result > UINT_16_MAX);
+        setHalfCarryFlag(((getHl() & 0xF) + (value & 0xF)) > 0xF);
+
+        setHl((short) (result & 0xFFFF));
+    }
+
+    private void adc(short value) {
+        int result = getA() + value;
+        setSubtractionFlag(false);
+        setZeroFlag(result == 0);
+        setCarryFlag(result > UINT_8_MAX);
+        setHalfCarryFlag(((getA() & 0xF) + (value & 0xF)) > 0xF);
+        result += getCarryFlag();
+
+        setA((short)(result & 0xFF));
+    }
+
     public void execute(Instruction instruction, InstructionTarget instructionTarget) {
         switch (instruction) {
             case ADD -> {
                 switch (instructionTarget) {
-                    case A -> {
-                        short targetVal = getA();
-                        add(targetVal);
-                    }
-                    case B -> {
-                        short targetVal = getB();
-                        add(targetVal);
-                    }
-                    case C -> {
-                        short targetVal = getC();
-                        add(targetVal);
-                    }
-                    case D -> {
-                        short targetVal = getD();
-                        add(targetVal);
-                    }
-                    case E -> {
-                        short targetVal = getE();
-                        add(targetVal);
-                    }
-                    case F -> {
-                        throw new RuntimeException("You can't select register F as a target for ADD");
-                    }
-                    case H -> {
-                        short targetVal = getH();
-                        add(targetVal);
-                    }
-                    case L -> {
-                        short targetVal = getL();
-                        add(targetVal);
-                    }
+                    case A -> add(getA());
+                    case B -> add(getB());
+                    case C -> add(getC());
+                    case D -> add(getD());
+                    case E -> add(getE());
+                    case F -> throw new RuntimeException("You can't select register F as a target for ADD");
+                    case H -> add(getH());
+                    case L -> add(getL());
                 }
             }
             case ADDHL -> {
+                switch (instructionTarget) {
+                    case A -> addHL(getA());
+                    case B -> addHL(getB());
+                    case C -> addHL(getC());
+                    case D -> addHL(getD());
+                    case E -> addHL(getE());
+                    case F -> throw new RuntimeException("You can't select register F as a target for ADDHL");
+                    case H -> addHL(getH());
+                    case L -> addHL(getL());
+                }
             }
             case ADC -> {
+                switch (instructionTarget) {
+                    case A -> adc(getA());
+                    case B -> adc(getB());
+                    case C -> adc(getC());
+                    case D -> adc(getD());
+                    case E -> adc(getE());
+                    case F -> throw new RuntimeException("You can't select register F as a target for ADC");
+                    case H -> adc(getH());
+                    case L -> adc(getL());
+                }
             }
             case SUB -> {
             }

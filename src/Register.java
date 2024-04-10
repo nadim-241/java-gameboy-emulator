@@ -11,52 +11,67 @@ public class Register {
     private short l;
 
     public void setA(short value) {
-        a = (short)(value & 0xFF);
+        a = (short) (value & 0xFF);
     }
+
     public short getA() {
-        return(short)(a & 0xFF);
+        return (short) (a & 0xFF);
     }
+
     public void setB(short value) {
-        b = (short)(value & 0xFF);
+        b = (short) (value & 0xFF);
     }
+
     public short getB() {
-        return(short)(b & 0xFF);
+        return (short) (b & 0xFF);
     }
+
     public void setC(short value) {
-        c = (short)(value & 0xFF);
+        c = (short) (value & 0xFF);
     }
+
     public short getC() {
-        return(short)(c & 0xFF);
+        return (short) (c & 0xFF);
     }
+
     public void setD(short value) {
-        d = (short)(value & 0xFF);
+        d = (short) (value & 0xFF);
     }
+
     public short getD() {
-        return(short)(d & 0xFF);
+        return (short) (d & 0xFF);
     }
+
     public void setE(short value) {
-        e = (short)(value & 0xFF);
+        e = (short) (value & 0xFF);
     }
+
     public short getE() {
-        return(short)(e & 0xFF);
+        return (short) (e & 0xFF);
     }
+
     public void setF(short value) {
-        f = (short)(value & 0xF0);
+        f = (short) (value & 0xF0);
     }
+
     public short getF() {
-        return(short)(f & 0xFF);
+        return (short) (f & 0xFF);
     }
+
     public void setH(short value) {
-        h = (short)(value & 0xFF);
+        h = (short) (value & 0xFF);
     }
+
     public short getH() {
-        return(short)(h & 0xFF);
+        return (short) (h & 0xFF);
     }
+
     public void setL(short value) {
-        l = (short)(value & 0xFF);
+        l = (short) (value & 0xFF);
     }
+
     public short getL() {
-        return(short)(l & 0xFF);
+        return (short) (l & 0xFF);
     }
 
 
@@ -65,9 +80,9 @@ public class Register {
     }
 
     public void setBc(short value) {
-        value = (short)(value & 0xFFFF);
-        setB((short)((value & 0xFF00) >> 8));
-        setC((short)(value & 0x00FF));
+        value = (short) (value & 0xFFFF);
+        setB((short) ((value & 0xFF00) >> 8));
+        setC((short) (value & 0x00FF));
     }
 
     public int getAf() {
@@ -75,9 +90,9 @@ public class Register {
     }
 
     public void setAf(short value) {
-        value = (short)(value & 0xFFFF);
-        setA((short)((value & 0xFF00) >> 8));
-        setF((short)(value & 0x00FF));
+        value = (short) (value & 0xFFFF);
+        setA((short) ((value & 0xFF00) >> 8));
+        setF((short) (value & 0x00FF));
     }
 
     public int getDe() {
@@ -85,9 +100,9 @@ public class Register {
     }
 
     public void setDe(short value) {
-        value = (short)(value & 0xFFFF);
-        setD((short)((value & 0xFF00) >> 8));
-        setE((short)(value & 0x00FF));
+        value = (short) (value & 0xFFFF);
+        setD((short) ((value & 0xFF00) >> 8));
+        setE((short) (value & 0x00FF));
     }
 
     public int getHl() {
@@ -102,58 +117,50 @@ public class Register {
 
     private void add(short value) {
         int result = getA() + value;
-        if(result == 0) {
-            setZeroFlag(true);
-        }
-        if(result > UINT_8_MAX) {
-            setCarryFlag(true);
-        }
-        else if(((getA() & 0xF) + (value & 0xF)) > 0xF) {
-            setHalfCarryFlag(true);
-        }
-        setA((short)(result & 0xFF));
+        setSubtractionFlag(false);
+        setZeroFlag(result == 0);
+        setCarryFlag(result > UINT_8_MAX);
+        setHalfCarryFlag(((getA() & 0xF) + (value & 0xF)) > 0xF);
+
+        setA((short) (result & 0xFF));
     }
 
     public void setCarryFlag(boolean value) {
-        if(value) {
-            f = (short)(f | 0b00010000);
-        }
-        else {
-            f = (short)(f & 0b11101111);
+        if (value) {
+            f = (short) (f | 0b00010000);
+        } else {
+            f = (short) (f & 0b11101111);
         }
     }
 
     public void setHalfCarryFlag(boolean value) {
-        if(value) {
-            f = (short)(f | 0b00100000);
-        }
-        else {
-            f = (short)(f & 0b11011111);
+        if (value) {
+            f = (short) (f | 0b00100000);
+        } else {
+            f = (short) (f & 0b11011111);
         }
     }
 
     public void setSubtractionFlag(boolean value) {
-        if(value) {
-            f = (short)(f | 0b01000000);
-        }
-        else {
-            f = (short)(f & 0b10111111);
+        if (value) {
+            f = (short) (f | 0b01000000);
+        } else {
+            f = (short) (f & 0b10111111);
         }
     }
 
     public void setZeroFlag(boolean value) {
-        if(value) {
-            f = (short)(f | 0b10000000);
-        }
-        else {
-            f = (short)(f & 0b01111111);
+        if (value) {
+            f = (short) (f | 0b10000000);
+        } else {
+            f = (short) (f & 0b01111111);
         }
     }
 
     public void execute(Instruction instruction, InstructionTarget instructionTarget) {
-        switch(instruction) {
+        switch (instruction) {
             case ADD -> {
-                switch(instructionTarget) {
+                switch (instructionTarget) {
                     case A -> {
                         short targetVal = getA();
                         add(targetVal);

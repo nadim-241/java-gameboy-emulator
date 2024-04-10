@@ -113,7 +113,7 @@ class RegisterTest {
         register.setB((short)0xFF);
         register.execute(Instruction.ADD, InstructionTarget.B);
         Assertions.assertEquals(register.getA(), 0xFE);
-        Assertions.assertEquals(register.getF(), 0b00010000);
+        Assertions.assertEquals(register.getF(), 0b00110000);
     }
 
     @Test
@@ -123,5 +123,14 @@ class RegisterTest {
         register.execute(Instruction.ADD, InstructionTarget.B);
         Assertions.assertEquals(register.getA(), 0x0);
         Assertions.assertEquals(register.getF(), 0b10000000);
+    }
+
+    @Test
+    void add() {
+        register.setA((short)0x0);
+        register.setB((short)0x0C);
+        register.execute(Instruction.ADD, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0x0C);
+        Assertions.assertEquals(register.getF(), 0b00000000);
     }
 }

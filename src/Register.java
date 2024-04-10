@@ -102,6 +102,9 @@ public class Register {
 
     private void add(short value) {
         int result = getA() + value;
+        if(result == 0) {
+            setZeroFlag(true);
+        }
         if(result > UINT_8_MAX) {
             setCarryFlag(true);
         }

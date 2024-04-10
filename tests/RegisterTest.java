@@ -115,4 +115,13 @@ class RegisterTest {
         Assertions.assertEquals(register.getA(), 0xFE);
         Assertions.assertEquals(register.getF(), 0b00010000);
     }
+
+    @Test
+    void addZeroResult() {
+        register.setA((short)0x0);
+        register.setB((short)0x0);
+        register.execute(Instruction.ADD, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0x0);
+        Assertions.assertEquals(register.getF(), 0b10000000);
+    }
 }

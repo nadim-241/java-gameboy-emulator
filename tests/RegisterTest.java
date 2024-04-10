@@ -65,4 +65,54 @@ class RegisterTest {
         register.setHl((short)0xFF0C);
         Assertions.assertEquals(register.getHl(), 0xFF0C);
     }
+
+    @Test
+    void setCarryFlag() {
+        register.setCarryFlag(true);
+        Assertions.assertEquals(register.getF(), 0b00010000);
+        register.setCarryFlag(false);
+        Assertions.assertEquals(register.getF(), 0b00000000);
+    }
+
+    @Test
+    void setHalfCarryFlag() {
+        register.setHalfCarryFlag(true);
+        Assertions.assertEquals(register.getF(), 0b00100000);
+        register.setHalfCarryFlag(false);
+        Assertions.assertEquals(register.getF(), 0b00000000);
+    }
+
+    @Test
+    void setSubtractFlag() {
+        register.setSubtractionFlag(true);
+        Assertions.assertEquals(register.getF(), 0b01000000);
+        register.setSubtractionFlag(false);
+        Assertions.assertEquals(register.getF(), 0b00000000);
+    }
+
+    @Test
+    void setZeroFlag() {
+        register.setZeroFlag(true);
+        Assertions.assertEquals(register.getF(), 0b10000000);
+        register.setZeroFlag(false);
+        Assertions.assertEquals(register.getF(), 0b00000000);
+    }
+
+    @Test
+    void addHalfCarry() {
+        register.setA((short)0x0C);
+        register.setB((short)0x0C);
+        register.execute(Instruction.ADD, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0x18);
+        Assertions.assertEquals(register.getF(), 0b00100000);
+    }
+
+    @Test
+    void addCarry() {
+        register.setA((short)0xFF);
+        register.setB((short)0xFF);
+        register.execute(Instruction.ADD, InstructionTarget.B);
+        Assertions.assertEquals(register.getA(), 0xFE);
+        Assertions.assertEquals(register.getF(), 0b00010000);
+    }
 }

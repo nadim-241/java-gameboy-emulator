@@ -1,4 +1,6 @@
 public class Register {
+
+    private static final int UINT_8_MAX = 255;
     private short a;
     private short b;
     private short c;
@@ -98,4 +100,146 @@ public class Register {
         setL((short) (value & 0x00FF));
     }
 
+    private void add(short value) {
+        int result = getA() + value;
+        if(result > UINT_8_MAX) {
+            setCarryFlag(true);
+        }
+        else if(((getA() & 0xF) + (value & 0xF)) > 0xF) {
+            setHalfCarryFlag(true);
+        }
+        setA((short)(result & 0xFF));
+    }
+
+    public void setCarryFlag(boolean value) {
+        if(value) {
+            f = (short)(f | 0b00010000);
+        }
+        else {
+            f = (short)(f & 0b11101111);
+        }
+    }
+
+    public void setHalfCarryFlag(boolean value) {
+        if(value) {
+            f = (short)(f | 0b00100000);
+        }
+        else {
+            f = (short)(f & 0b11011111);
+        }
+    }
+
+    public void setSubtractionFlag(boolean value) {
+        if(value) {
+            f = (short)(f | 0b01000000);
+        }
+        else {
+            f = (short)(f & 0b10111111);
+        }
+    }
+
+    public void setZeroFlag(boolean value) {
+        if(value) {
+            f = (short)(f | 0b10000000);
+        }
+        else {
+            f = (short)(f & 0b01111111);
+        }
+    }
+
+    public void execute(Instruction instruction, InstructionTarget instructionTarget) {
+        switch(instruction) {
+            case ADD -> {
+                switch(instructionTarget) {
+                    case A -> {
+                        short targetVal = getA();
+                        add(targetVal);
+                    }
+                    case B -> {
+                        short targetVal = getB();
+                        add(targetVal);
+                    }
+                    case C -> {
+                        short targetVal = getC();
+                        add(targetVal);
+                    }
+                    case D -> {
+                        short targetVal = getD();
+                        add(targetVal);
+                    }
+                    case E -> {
+                        short targetVal = getE();
+                        add(targetVal);
+                    }
+                    case F -> {
+                        throw new RuntimeException("You can't select register F as a target for ADD");
+                    }
+                    case H -> {
+                        short targetVal = getH();
+                        add(targetVal);
+                    }
+                    case L -> {
+                        short targetVal = getL();
+                        add(targetVal);
+                    }
+                }
+            }
+            case ADDHL -> {
+            }
+            case ADC -> {
+            }
+            case SUB -> {
+            }
+            case SBC -> {
+            }
+            case AND -> {
+            }
+            case OR -> {
+            }
+            case XOR -> {
+            }
+            case CP -> {
+            }
+            case INC -> {
+            }
+            case DEC -> {
+            }
+            case CCF -> {
+            }
+            case SCF -> {
+            }
+            case RRA -> {
+            }
+            case RLA -> {
+            }
+            case RRCA -> {
+            }
+            case RRLA -> {
+            }
+            case CPL -> {
+            }
+            case BIT -> {
+            }
+            case RESET -> {
+            }
+            case SET -> {
+            }
+            case SRL -> {
+            }
+            case RR -> {
+            }
+            case RL -> {
+            }
+            case RRC -> {
+            }
+            case RLC -> {
+            }
+            case SRA -> {
+            }
+            case SLA -> {
+            }
+            case SWAP -> {
+            }
+        }
+    }
 }

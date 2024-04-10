@@ -1,4 +1,4 @@
-enum Instruction {
+public enum Instruction {
     ADD,
     ADDHL,
     ADC,

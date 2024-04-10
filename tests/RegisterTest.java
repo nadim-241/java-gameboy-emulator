@@ -295,4 +295,43 @@ class RegisterTest {
         register.execute(Instruction.RRLA, InstructionTarget.A);
         Assertions.assertEquals(register.getA(), 0b00100011);
     }
+
+    @Test
+    void cpl() {
+        register.setA((short)0b10010001);
+        register.execute(Instruction.CPL, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b01101110);
+    }
+
+    @Test
+    void rr() {
+        register.setB((short)0b01100000);
+        register.execute(Instruction.RR, InstructionTarget.B);
+        Assertions.assertEquals(register.getB(), 0b00110000);
+        Assertions.assertEquals(register.getCarryFlag(), 0b0);
+
+        register.setA((short)0b01100001);
+        register.execute(Instruction.RR, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b00110000);
+        Assertions.assertEquals(register.getCarryFlag(), 0b00010000);
+
+        register.setCarryFlag(false);
+        register.setHl((short)0b1000100010001001);
+        register.execute(Instruction.RR, InstructionTarget.HL);
+        Assertions.assertEquals(register.getHl(), 0b0100010001000100);
+        Assertions.assertEquals(register.getCarryFlag(), 0b00010000);
+    }
+
+    @Test
+    void rl() {
+        register.setHl((short)0b1000100010001000);
+        register.execute(Instruction.RL, InstructionTarget.HL);
+        Assertions.assertEquals(register.getHl(), 0b0001000100010000);
+        Assertions.assertEquals(register.getCarryFlag(), 0b00010000);
+
+        register.setA((short)0b11100001);
+        register.execute(Instruction.RL, InstructionTarget.A);
+        Assertions.assertEquals(register.getA(), 0b11000010);
+        Assertions.assertEquals(register.getCarryFlag(), 0b00010000);
+    }
 }

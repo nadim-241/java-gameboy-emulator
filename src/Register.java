@@ -497,18 +497,218 @@ public class Register {
                 setA((short)(result));
             }
             case CPL -> {
+                setA((short)((~getA()) & 0xFF));
             }
             case BIT -> {
+                //TODO
             }
             case RESET -> {
+                //TODO
             }
             case SET -> {
+                //TODO
             }
             case SRL -> {
+                switch(instructionTarget) {
+                    case A -> setA((short)(getA() >> 1));
+                    case B -> setB((short)(getB() >> 1));
+                    case C -> setC((short)(getC() >> 1));
+                    case D -> setD((short)(getD() >> 1));
+                    case E -> setE((short)(getE() >> 1));
+                    case F -> setF((short)(getF() >> 1));
+                    case H -> setH((short)(getH() >> 1));
+                    case L -> setL((short)(getL() >> 1));
+                    case AF -> setAf((short)(getAf() >> 1));
+                    case BC -> setBc((short)(getBc() >> 1));
+                    case DE -> setDe((short)(getDe() >> 1));
+                    case HL -> setHl((short)(getHl() >> 1));
+                }
             }
             case RR -> {
+                switch(instructionTarget) {
+                    case A -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getA();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setA((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case B -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getB();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setB((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case C -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getC();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setC((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case D -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getD();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setD((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case E -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getE();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setE((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case F -> throw new RuntimeException("Can't call RR on F");
+                    case H -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getH();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setH((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case L -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getL();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setL((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case AF -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getAf();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setAf((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case BC -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getBc();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setBc((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case DE -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getDe();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setDe((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                    case HL -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getHl();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setHl((short)((aValue >> 1) | mask));
+                        int carryValue = aValue & 0b00000001;
+                        setCarryFlag(carryValue == 1);
+                    }
+                }
             }
             case RL -> {
+                switch(instructionTarget) {
+                    case A -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getA();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setA((short)(((aValue << 1) & 0xFF) | mask));
+                        int carryValue = aValue & 0b10000000;
+                        setCarryFlag(carryValue == 0b10000000);
+                    }
+                    case B -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getB();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setB((short)(((aValue << 1) & 0xFF) | mask));
+                        int carryValue = aValue & 0b10000000;
+                        setCarryFlag(carryValue == 0b10000000);
+                    }
+                    case C -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getC();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setC((short)(((aValue << 1) & 0xFF) | mask));
+                        int carryValue = aValue & 0b10000000;
+                        setCarryFlag(carryValue == 0b10000000);
+                    }
+                    case D -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getD();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setD((short)(((aValue << 1) & 0xFF) | mask));
+                        int carryValue = aValue & 0b10000000;
+                        setCarryFlag(carryValue == 0b10000000);
+                    }
+                    case E -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getE();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setE((short)(((aValue << 1) & 0xFF) | mask));
+                        int carryValue = aValue & 0b10000000;
+                        setCarryFlag(carryValue == 0b10000000);
+                    }
+                    case F -> throw new RuntimeException("Can't call RR on F");
+                    case H -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getH();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setH((short)(((aValue << 1) & 0xFF) | mask));
+                        int carryValue = aValue & 0b10000000;
+                        setCarryFlag(carryValue == 0b10000000);
+                    }
+                    case L -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getL();
+                        int mask = flag ? 0b10000000 : 0b0;
+                        setL((short)(((aValue << 1) & 0xFF) | mask));
+                        int carryValue = aValue & 0b10000000;
+                        setCarryFlag(carryValue == 0b10000000);
+                    }
+                    case AF -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getAf();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setAf((short)(((aValue << 1) & 0xFFFF) | mask));
+                        int carryValue = aValue & 0b1000000000000000;
+                        setCarryFlag(carryValue == 0b1000000000000000);
+                    }
+                    case BC -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getBc();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setBc((short)(((aValue << 1) & 0xFFFF) | mask));
+                        int carryValue = aValue & 0b1000000000000000;
+                        setCarryFlag(carryValue == 0b1000000000000000);
+                    }
+                    case DE -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getDe();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setDe((short)(((aValue << 1) & 0xFFFF) | mask));
+                        int carryValue = aValue & 0b1000000000000000;
+                        setCarryFlag(carryValue == 0b1000000000000000);
+                    }
+                    case HL -> {
+                        boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
+                        int aValue = getHl();
+                        int mask = flag ? 0b1000000000000000 : 0b0;
+                        setHl((short)(((aValue << 1) & 0xFFFF) | mask));
+                        int carryValue = aValue & 0b1000000000000000;
+                        setCarryFlag(carryValue == 0b1000000000000000);
+                    }
+                }
             }
             case RRC -> {
             }

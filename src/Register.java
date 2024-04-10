@@ -462,12 +462,8 @@ public class Register {
                     }
                 }
             }
-            case CCF -> {
-                setCarryFlag(getCarryFlag() != 0b00010000);
-            }
-            case SCF -> {
-                setCarryFlag(true);
-            }
+            case CCF -> setCarryFlag(getCarryFlag() != 0b00010000);
+            case SCF -> setCarryFlag(true);
             case RRA -> {
                 boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
                 int aValue = getA();
@@ -496,9 +492,7 @@ public class Register {
                 int result = (aValue << 1) | (mask >> 7);
                 setA((short)(result));
             }
-            case CPL -> {
-                setA((short)((~getA()) & 0xFF));
-            }
+            case CPL -> setA((short)((~getA()) & 0xFF));
             case BIT -> {
                 //TODO
             }

@@ -39,7 +39,7 @@ public class Register {
         return(short)(e & 0xFF);
     }
     public void setF(short value) {
-        f = (short)(value & 0xFF);
+        f = (short)(value & 0xF0);
     }
     public short getF() {
         return(short)(f & 0xFF);

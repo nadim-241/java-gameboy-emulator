@@ -32,17 +32,17 @@ class RegisterTest {
     void getAf() {
         register.setA((short)0xf);
         register.setF((short)0xc);
-        Assertions.assertEquals(register.getAf(), 0x0f0c);
+        Assertions.assertEquals(register.getAf(), 0x0f00);
 
         register.setA((short)0xff);
-        register.setC((short)0xff);
-        Assertions.assertEquals(register.getAf(), 0xffff);
+        register.setF((short)0xff);
+        Assertions.assertEquals(register.getAf(), 0xfff0);
     }
 
     @Test
     void setAf() {
         register.setAf((short)0xFF0C);
-        Assertions.assertEquals(register.getAf(), 0xFF0C);
+        Assertions.assertEquals(register.getAf(), 0xFF00);
     }
 
     @Test

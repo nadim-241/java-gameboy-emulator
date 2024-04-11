@@ -324,7 +324,7 @@ class RegisterTest {
 
     @Test
     void rl() {
-        register.setHl((short)0b1000100010001000);
+        register.setHl(0b1000100010001000);
         register.execute(Instruction.RL, InstructionTarget.HL);
         Assertions.assertEquals(register.getHl(), 0b0001000100010000);
         Assertions.assertEquals(register.getCarryFlag(), 0b00010000);

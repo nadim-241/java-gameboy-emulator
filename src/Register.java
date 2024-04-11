@@ -303,24 +303,33 @@ public class Register {
         setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
     }
 
-    public void execute(Instruction instruction, InstructionTarget... instructionTargets) {
+    /**
+     * The plan! Call any of these instructions, depending on type arg2 can either specify n8,
+     * r8, [XX] (the location in memory pointed to by register [XX]) or u3
+     * <a href="https://rgbds.gbdev.io/docs/v0.7.0/gbz80.7#ADC_A,r8">see here</a>
+     *  for more info. LOAD will be done somewhere else
+     * @param instruction
+     * @param instructionTarget
+     * @param arg2
+     */
+    public void execute(Instruction instruction, InstructionTarget instructionTarget, int... arg2) {
         switch (instruction) {
-            case ADD -> add(get(instructionTargets[0]));
-            case ADDHL -> addHL(get(instructionTargets[0]));
-            case ADC -> adc(get(instructionTargets[0]));
-            case SUB -> sub(get(instructionTargets[0]));
-            case SBC -> sbc(get(instructionTargets[0]));
-            case AND -> setA((short)(getA() & get(instructionTargets[0]) & 0xFF));
-            case OR -> setA((short)(getA() | get(instructionTargets[0]) & 0xFF));
-            case XOR -> setA((short)(getA() ^ get(instructionTargets[0]) & 0xFF));
-            case CP -> cp(get(instructionTargets[0]));
-            case INC -> set(instructionTargets[0], get(instructionTargets[0]) + 1 & 0xFF);
+            case ADD -> add(get(instructionTarget));
+            case ADDHL -> addHL(get(instructionTarget));
+            case ADC -> adc(get(instructionTarget));
+            case SUB -> sub(get(instructionTarget));
+            case SBC -> sbc(get(instructionTarget));
+            case AND -> setA((short)(getA() & get(instructionTarget) & 0xFF));
+            case OR -> setA((short)(getA() | get(instructionTarget) & 0xFF));
+            case XOR -> setA((short)(getA() ^ get(instructionTarget) & 0xFF));
+            case CP -> cp(get(instructionTarget));
+            case INC -> set(instructionTarget, get(instructionTarget) + 1 & 0xFF);
             case DEC -> {
-                int result = get(instructionTargets[0]) - 1;
+                int result = get(instructionTarget) - 1;
                 if(result < 0) {
                     result += 256;
                 }
-                set(instructionTargets[0], result & 0xFF);
+                set(instructionTarget, result & 0xFF);
             }
             case CCF -> setCarryFlag(getCarryFlag() != 0b00010000);
             case SCF -> setCarryFlag(true);
@@ -364,20 +373,20 @@ public class Register {
             case SET -> {
                 //TODO
             }
-            case SRL -> set(instructionTargets[0], get(instructionTargets[0]) >> 1);
+            case SRL -> set(instructionTarget, get(instructionTarget) >> 1);
             case RR -> {
                 boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
-                int aValue = get(instructionTargets[0]);
+                int aValue = get(instructionTarget);
                 int mask = flag ? 0b10000000 : 0b0;
-                set(instructionTargets[0], (aValue >> 1) | mask);
+                set(instructionTarget, (aValue >> 1) | mask);
                 int carryValue = aValue & 0b00000001;
                 setCarryFlag(carryValue == 1);
             }
             case RL -> {
                 boolean flag = (getCarryFlag() & 0b00010000) == 0b00010000;
-                int aValue = get(instructionTargets[0]);
+                int aValue = get(instructionTarget);
                 int mask = flag ? 0b10000000 : 0b0;
-                set(instructionTargets[0], (aValue << 1 & 0xFFFF | mask));
+                set(instructionTarget, (aValue << 1 & 0xFFFF | mask));
                 int carryValue = aValue & 0b10000000;
                 setCarryFlag(carryValue == 0b10000000);
             }

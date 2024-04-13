@@ -469,7 +469,9 @@ public class ALU {
                 set(instructionTarget, value & test, memory);
             }
             case SET -> {
-                //TODO
+                int set = 1 << instructionTarget.getImmediateValue();
+                int value = get(instructionTarget, memory);
+                set(instructionTarget, value | set, memory);
             }
             case SRL -> set(instructionTarget, get(instructionTarget, memory) >> 1, memory);
             case RR -> {
@@ -489,14 +491,35 @@ public class ALU {
                 setCarryFlag(carryValue == 0b10000000);
             }
             case RRC -> {
+                int value = get(instructionTarget, memory);
+                int right = value >>> 1;
+                int left = value << 7;
+                set(instructionTarget, right | left, memory);
             }
             case RLC -> {
+                int value = get(instructionTarget, memory);
+                int right = value & 1;
+                int left = value << 1;
+                set(instructionTarget, right | left, memory);
             }
             case SRA -> {
+                int value = get(instructionTarget, memory);
+                int rotatedValue = (value & 0b1111111) >>> 1 | (value & 0b10000000);
+                set(instructionTarget, rotatedValue, memory);
             }
             case SLA -> {
+                int value = get(instructionTarget, memory);
+                int left = (value << 1)  & 0b1111111;
+                int right = (value & 0b1000000) >> 6;
+                int rotatedValue = (value & 0b10000000) | left | right;
+                set(instructionTarget, rotatedValue, memory);
             }
             case SWAP -> {
+                int value = get(instructionTarget, memory);
+                int msHalf = (value & 0xF0) >> 4;
+                int lsHalf = (value & 0xF) << 4;
+                int swapValue = msHalf | lsHalf;
+                set(instructionTarget, swapValue, memory);
             }
         }
     }

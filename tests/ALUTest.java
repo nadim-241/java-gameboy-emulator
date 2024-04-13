@@ -365,4 +365,50 @@ class ALUTest {
         ALU.execute(Instruction.RESET, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER, 0), memory);
         Assertions.assertEquals(ALU.getA(), 0b00101000);
     }
+
+    @Test
+    void setTest() {
+        ALU.setA((short) 0b00101000);
+        ALU.execute(Instruction.SET, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER, 0), memory);
+        Assertions.assertEquals(ALU.getA(), 0b00101001);
+    }
+
+    @Test
+    void rrcTest() {
+        ALU.setA((short) 0b00101000);
+        ALU.execute(Instruction.RRC, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memory);
+        Assertions.assertEquals(ALU.getA(), 0b00010100);
+    }
+
+    @Test
+    void rlcTest() {
+        ALU.setA((short) 0b00101000);
+        ALU.execute(Instruction.RLC, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memory);
+        Assertions.assertEquals(ALU.getA(), 0b01010000);
+    }
+
+    @Test
+    void sraTest() {
+        ALU.setA((short) 0b10101000);
+        ALU.execute(Instruction.SRA, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memory);
+        Assertions.assertEquals(ALU.getA(), 0b10010100);
+    }
+
+    @Test
+    void slaTest() {
+        ALU.setA((short) 0b11101001);
+        ALU.execute(Instruction.SLA, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memory);
+        Assertions.assertEquals(ALU.getA(), 0b11010011);
+
+        ALU.setA((short) 0b01101001);
+        ALU.execute(Instruction.SLA, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memory);
+        Assertions.assertEquals(ALU.getA(), 0b01010011);
+    }
+
+    @Test
+    void swapTest() {
+        ALU.setA((short) 0b11101001);
+        ALU.execute(Instruction.SWAP, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memory);
+        Assertions.assertEquals(ALU.getA(), 0b10011110);
+    }
 }

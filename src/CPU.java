@@ -1,4 +1,4 @@
-public class ALU {
+public class CPU {
 
 
     private short a;
@@ -449,7 +449,7 @@ public class ALU {
                 int result = (aValue >> 1) | (mask << 7);
                 setA((short) (result));
             }
-            case RRLA -> {
+            case RLCA -> {
                 int aValue = getA();
                 int mask = aValue & 0b10000000;
                 int result = (aValue << 1) | (mask >> 7);

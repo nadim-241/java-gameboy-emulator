@@ -10,6 +10,25 @@ public class CPU {
     private short h;
     private short l;
 
+    private int SP;
+
+    private int PC;
+
+    public void setPC(int value) {
+        PC = value;
+    }
+    public int getPC() {
+        return PC;
+    }
+
+    public void setSP(int value) {
+        SP = value;
+    }
+
+    public int getSP() {
+        return SP;
+    }
+
     public void setA(short value) {
         a = (short) (value & 0xFF);
     }
@@ -114,6 +133,9 @@ public class CPU {
                 case HL -> {
                     return getHl() & 0xFFFF; // Assuming 16-bit result for two-character cases
                 }
+                case SP -> {
+                    return getSP();
+                }
                 default -> throw new RuntimeException("Invalid instruction target " + target);
             }
         } else if (targetType == InstructionTarget.TargetType.POINTER) {
@@ -157,6 +179,9 @@ public class CPU {
                 case HL -> {
                     // Handle register pair HL directly using your method (likely doesn't need combining)
                     return memory.get(getHl());
+                }
+                case SP -> {
+                    return memory.get(getSP());
                 }
             }
         } else if (targetType == InstructionTarget.TargetType.IMMEDIATE) {
@@ -204,6 +229,9 @@ public class CPU {
                 case HL:
                     setHl(value & 0xFFFF);
                     break;
+                case SP:
+                    setSP(value);
+                    break;
                 default:
                     throw new RuntimeException("Invalid instruction target " + target);
             }
@@ -250,6 +278,9 @@ public class CPU {
                 case HL -> {
                     // Handle register pair HL directly using your method (likely doesn't need combining)
                     memory.set(getHl(), value);
+                }
+                case SP -> {
+                    memory.set(getSP(), value);
                 }
             }
         }
@@ -521,6 +552,75 @@ public class CPU {
                 int swapValue = msHalf | lsHalf;
                 set(instructionTarget, swapValue, memory);
             }
+            case NOP -> {
+            }
+            case JP, JR -> setPC(get(instructionTarget, memory));
+            case RET -> {}
+            case RETI -> {}
+            case RST, CALL -> {
+                fetch(get(instructionTarget, memory), memory);
+            }
+            case POP -> {
+                int lo = get(instructionTarget, memory);
+                setSP(getSP() + 1);
+                int hi = get(instructionTarget, memory);
+                setSP(getSP() + 1);
+                int af = hi | lo;
+                set(instructionTarget, af, memory);
+            }
+            case PUSH -> {
+                int val = get(instructionTarget, memory);
+                memory.set(getSP(), val);
+            }
+
+        }
+    }
+
+    public void execute(Instruction instruction, InstructionTarget target1, InstructionTarget target2, MemoryUnit memory) {
+        switch(instruction) {
+            default : {
+                throw new IllegalArgumentException("Can't call this version of execute with these arguments");
+            }
+            case LD:
+            case LDH: {
+                int value = get(target2, memory);
+                set(target1, value, memory);
+                break;
+            }
+            case ADD_SP: {
+                int value = get(target2, memory);
+                int value2 = get(target1, memory);
+                int result = value + value2;
+                set(target1, result, memory);
+                break;
+            }
+        }
+    }
+
+    public void fetch(int addr, MemoryUnit memoryUnit) {
+        int opcode = memoryUnit.get(addr);
+        decode(opcode, memoryUnit, addr);
+    }
+
+    public void decode(int opcode, MemoryUnit memoryUnit, int addr) {
+        switch(opcode) {
+            default -> throw new IllegalStateException("Unexpected value: " + opcode);
+            case 0x0 -> execute(Instruction.NOP, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1 -> {
+                int valueLo = memoryUnit.get(++addr);
+                int valueHi = memoryUnit.get(++addr) << 4;
+                int value = valueHi | valueLo;
+                execute(Instruction.LD, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x2 -> {
+
+            }
+        }
+    }
+
+    public void run(MemoryUnit memoryUnit) {
+        while(true) {
+            fetch(PC++, memoryUnit);
         }
     }
 }

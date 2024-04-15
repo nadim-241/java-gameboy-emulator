@@ -17,6 +17,7 @@ public class CPU {
     public void setPC(int value) {
         PC = value;
     }
+
     public int getPC() {
         return PC;
     }
@@ -235,9 +236,7 @@ public class CPU {
                 default:
                     throw new RuntimeException("Invalid instruction target " + target);
             }
-        }
-
-        else if (target.getTargetType() == InstructionTarget.TargetType.POINTER) {
+        } else if (target.getTargetType() == InstructionTarget.TargetType.POINTER) {
             switch (target.getRegister()) {
                 case A -> {
                     memory.set(getA(), value);
@@ -540,7 +539,7 @@ public class CPU {
             }
             case SLA -> {
                 int value = get(instructionTarget, memory);
-                int left = (value << 1)  & 0b1111111;
+                int left = (value << 1) & 0b1111111;
                 int right = (value & 0b1000000) >> 6;
                 int rotatedValue = (value & 0b10000000) | left | right;
                 set(instructionTarget, rotatedValue, memory);
@@ -555,8 +554,10 @@ public class CPU {
             case NOP -> {
             }
             case JP, JR -> setPC(get(instructionTarget, memory));
-            case RET -> {}
-            case RETI -> {}
+            case RET -> {
+            }
+            case RETI -> {
+            }
             case RST, CALL -> {
                 fetch(get(instructionTarget, memory), memory);
             }
@@ -577,8 +578,8 @@ public class CPU {
     }
 
     public void execute(Instruction instruction, InstructionTarget target1, InstructionTarget target2, MemoryUnit memory) {
-        switch(instruction) {
-            default : {
+        switch (instruction) {
+            default: {
                 throw new IllegalArgumentException("Can't call this version of execute with these arguments");
             }
             case LD:
@@ -596,6 +597,11 @@ public class CPU {
             }
         }
     }
+    //For no targets
+    public void execute(Instruction instruction, MemoryUnit memoryUnit) {
+        InstructionTarget blank = new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER);
+        execute(instruction, blank, memoryUnit);
+    }
 
     public void fetch(int addr, MemoryUnit memoryUnit) {
         int opcode = memoryUnit.get(addr);
@@ -603,23 +609,32 @@ public class CPU {
     }
 
     public void decode(int opcode, MemoryUnit memoryUnit, int addr) {
-        switch(opcode) {
+        switch (opcode) {
             default -> throw new IllegalStateException("Unexpected value: " + opcode);
-            case 0x0 -> execute(Instruction.NOP, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x0 ->
+                    execute(Instruction.NOP, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x1 -> {
-                int valueLo = memoryUnit.get(++addr);
-                int valueHi = memoryUnit.get(++addr) << 4;
-                int value = valueHi | valueLo;
+                int value = memoryUnit.get16(++addr);
                 execute(Instruction.LD, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
             }
-            case 0x2 -> {
-
+            case 0x2 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.BC, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x3 -> execute(Instruction.INC, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x4 -> execute(Instruction.INC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x5 -> execute(Instruction.DEC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x6 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
             }
+            case 0x7 -> execute(Instruction.RLCA, memoryUnit);
+            case 0x8 -> execute(Instruction.LD, new InstructionTarget(addr), new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
+
+
         }
     }
 
     public void run(MemoryUnit memoryUnit) {
-        while(true) {
+        while (true) {
             fetch(PC++, memoryUnit);
         }
     }

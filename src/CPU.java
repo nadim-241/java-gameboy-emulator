@@ -283,6 +283,9 @@ public class CPU {
                 }
             }
         }
+        else {
+            memory.set(target.getImmediateValue(), value);
+        }
     }
 
     public int getBc() {
@@ -627,7 +630,7 @@ public class CPU {
                 execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
             }
             case 0x7 -> execute(Instruction.RLCA, memoryUnit);
-            case 0x8 -> execute(Instruction.LD, new InstructionTarget(addr), new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x8 -> execute(Instruction.LD, new InstructionTarget(++addr), new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
 
 
         }

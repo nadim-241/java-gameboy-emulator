@@ -411,4 +411,20 @@ class CPUTest {
         CPU.execute(Instruction.SWAP, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memory);
         Assertions.assertEquals(CPU.getA(), 0b10011110);
     }
+
+    @Test
+    void jumpTest() {
+        MemoryUnit memoryUnit = new MemoryUnit();
+        memoryUnit.set(0, 0x18);
+        memoryUnit.set(1, 0xC);
+        memoryUnit.set(2, 0xF);
+        memoryUnit.set(0xC, 0x18);
+        memoryUnit.set(0xD, 0b11111101);
+        CPU.runOneStep(memoryUnit);
+        int pc = CPU.getPC();
+        Assertions.assertEquals(0xC, pc);
+        CPU.runOneStep(memoryUnit);
+        pc = CPU.getPC();
+        Assertions.assertEquals(0x9, pc);
+    }
 }

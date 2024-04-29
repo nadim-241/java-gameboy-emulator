@@ -1,3 +1,5 @@
+import javax.crypto.spec.DESedeKeySpec;
+
 public class CPU {
 
 
@@ -559,6 +561,8 @@ public class CPU {
             case JP, JR -> setPC(get(instructionTarget, memory));
             case RET -> {
             }
+            case STOP -> {
+            }
             case RETI -> {
             }
             case RST, CALL -> {
@@ -621,7 +625,7 @@ public class CPU {
                 execute(Instruction.LD, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
             }
             case 0x2 ->
-                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.BC, InstructionTarget.TargetType.POINTER), memoryUnit);
+                    execute(Instruction.LD, new InstructionTarget(Register.BC, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x3 -> execute(Instruction.INC, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x4 -> execute(Instruction.INC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x5 -> execute(Instruction.DEC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
@@ -631,8 +635,45 @@ public class CPU {
             }
             case 0x7 -> execute(Instruction.RLCA, memoryUnit);
             case 0x8 -> execute(Instruction.LD, new InstructionTarget(++addr), new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
-
-
+            case 0x9 -> execute(Instruction.ADDHL, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA -> execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.BC, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0xB -> execute(Instruction.DEC, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xC -> execute(Instruction.INC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xD -> execute(Instruction.DEC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xE -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.POINTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0xF -> execute(Instruction.RRCA, memoryUnit);
+            case 0x10 -> execute(Instruction.STOP, memoryUnit);
+            case 0x11 ->  {
+                int value = memoryUnit.get16(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x12 -> execute(Instruction.LD, new InstructionTarget(Register.DE, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x13 -> execute(Instruction.INC, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x14 -> execute(Instruction.INC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x15 ->  execute(Instruction.DEC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x16 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.POINTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x17 -> execute(Instruction.RLA, memoryUnit);
+            case 0x18 -> {
+                byte value = (byte) memoryUnit.get(++addr);
+                PC--;
+                setPC(PC + value);
+            }
+            case 0x19 -> execute(Instruction.ADDHL, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1A -> execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.DE, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x1B -> execute(Instruction.DEC, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1C -> execute(Instruction.INC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1D -> execute(Instruction.DEC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1E -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x1F -> execute(Instruction.RRA, memoryUnit);
         }
     }
 
@@ -640,5 +681,13 @@ public class CPU {
         while (true) {
             fetch(PC++, memoryUnit);
         }
+    }
+
+    /**
+     * Used for testing one step of execution
+     * @param memoryUnit memory
+     */
+    public void runOneStep(MemoryUnit memoryUnit) {
+        fetch(PC++, memoryUnit);
     }
 }

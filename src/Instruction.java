@@ -13,5 +13,5 @@ public enum Instruction {
     RLCA, CPL, BIT, RESET, SET,
     SRL, RR, RL, RRC, RLC, SRA,
     SLA, SWAP,
-    CALL, JP, JR,  RET, RETI, RST, ADD_SP, LD, LDH, POP, PUSH, NOP
+    CALL, JP, JR,  RET, RETI, RST, ADD_SP, LD, LDH, POP, PUSH, STOP, NOP
 }

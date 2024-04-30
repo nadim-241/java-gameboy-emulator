@@ -427,4 +427,28 @@ class CPUTest {
         pc = CPU.getPC();
         Assertions.assertEquals(0x9, pc);
     }
+
+    @Test
+    void daaTest() {
+        int a = 0x54;
+        int b = 0x28;
+        CPU.setA((short)a);
+        CPU.execute(Instruction.ADD, new InstructionTarget(b), memory);
+        CPU.adjustBCD();
+        Assertions.assertEquals(0x82, CPU.getA());
+
+        a = 0x9;
+        b = 0x8;
+        CPU.setA((short)a);
+        CPU.execute(Instruction.ADD, new InstructionTarget(b), memory);
+        CPU.adjustBCD();
+        Assertions.assertEquals(0x17, CPU.getA());
+
+        a = 0x90;
+        b = 0x80;
+        CPU.setA((short)a);
+        CPU.execute(Instruction.ADD, new InstructionTarget(b), memory);
+        CPU.adjustBCD();
+        Assertions.assertEquals(0x10, CPU.getA());
+    }
 }

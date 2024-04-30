@@ -1,4 +1,5 @@
 import javax.crypto.spec.DESedeKeySpec;
+import java.lang.invoke.LambdaForm$Holder;
 
 public class CPU {
 
@@ -15,6 +16,10 @@ public class CPU {
     private int SP;
 
     private int PC;
+
+    public boolean getZeroFlag() {
+        return (f & 0b10000000) == 0b10000000;
+    }
 
     public void setPC(int value) {
         PC = value;
@@ -235,6 +240,9 @@ public class CPU {
                 case SP:
                     setSP(value);
                     break;
+                case PC:
+                    setPC(value);
+                    break;
                 default:
                     throw new RuntimeException("Invalid instruction target " + target);
             }
@@ -283,9 +291,11 @@ public class CPU {
                 case SP -> {
                     memory.set(getSP(), value);
                 }
+                case PC -> {
+                    memory.set(getPC(), value);
+                }
             }
-        }
-        else {
+        } else {
             memory.set(target.getImmediateValue(), value);
         }
     }
@@ -340,6 +350,10 @@ public class CPU {
 
     public short getCarryFlag() {
         return (short) (f & 0b00010000);
+    }
+
+    public short getHalfCarryFlag() {
+        return (short) (f & 0b00100000);
     }
 
     public void setHalfCarryFlag(boolean value) {
@@ -430,6 +444,25 @@ public class CPU {
         setZeroFlag(result == 0);
         setCarryFlag(result > Constants.UINT_8_MAX || result < 0);
         setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
+    }
+
+    /**
+     * Adjusts the bytes in register A to
+     * correspond to BCD notation (buggy, needs work)
+     */
+    public void adjustBCD() {
+        int offset = 0;
+        int aVal = getA();
+        int carry = getCarryFlag();
+        int halfCarry = getHalfCarryFlag();
+
+        if ((aVal & 0xF) > 0x09 || halfCarry == 0b00100000) {
+            offset |= 0x06;
+        }
+        if ((aVal > 0x99) || carry == 1) {
+            offset |= 0x60;
+        }
+        add(offset);
     }
 
     /**
@@ -604,6 +637,7 @@ public class CPU {
             }
         }
     }
+
     //For no targets
     public void execute(Instruction instruction, MemoryUnit memoryUnit) {
         InstructionTarget blank = new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER);
@@ -626,34 +660,47 @@ public class CPU {
             }
             case 0x2 ->
                     execute(Instruction.LD, new InstructionTarget(Register.BC, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x3 -> execute(Instruction.INC, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x4 -> execute(Instruction.INC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x5 -> execute(Instruction.DEC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x3 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x4 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x5 ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x6 -> {
                 int value = memoryUnit.get(++addr);
                 execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
             }
             case 0x7 -> execute(Instruction.RLCA, memoryUnit);
-            case 0x8 -> execute(Instruction.LD, new InstructionTarget(++addr), new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x9 -> execute(Instruction.ADDHL, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0xA -> execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.BC, InstructionTarget.TargetType.POINTER), memoryUnit);
-            case 0xB -> execute(Instruction.DEC, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0xC -> execute(Instruction.INC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0xD -> execute(Instruction.DEC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x8 ->
+                    execute(Instruction.LD, new InstructionTarget(++addr), new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x9 ->
+                    execute(Instruction.ADDHL, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.BC, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0xB ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xC ->
+                    execute(Instruction.INC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xD ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xE -> {
                 int value = memoryUnit.get(++addr);
                 execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.POINTER), new InstructionTarget(value), memoryUnit);
             }
             case 0xF -> execute(Instruction.RRCA, memoryUnit);
             case 0x10 -> execute(Instruction.STOP, memoryUnit);
-            case 0x11 ->  {
+            case 0x11 -> {
                 int value = memoryUnit.get16(++addr);
                 execute(Instruction.LD, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
             }
-            case 0x12 -> execute(Instruction.LD, new InstructionTarget(Register.DE, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x13 -> execute(Instruction.INC, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x14 -> execute(Instruction.INC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x15 ->  execute(Instruction.DEC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x12 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.DE, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x13 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x14 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x15 ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x16 -> {
                 int value = memoryUnit.get(++addr);
                 execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.POINTER), new InstructionTarget(value), memoryUnit);
@@ -664,16 +711,410 @@ public class CPU {
                 PC--;
                 setPC(PC + value);
             }
-            case 0x19 -> execute(Instruction.ADDHL, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x1A -> execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.DE, InstructionTarget.TargetType.POINTER), memoryUnit);
-            case 0x1B -> execute(Instruction.DEC, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x1C -> execute(Instruction.INC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
-            case 0x1D -> execute(Instruction.DEC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x19 ->
+                    execute(Instruction.ADDHL, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1A ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.DE, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x1B ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1C ->
+                    execute(Instruction.INC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x1D ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x1E -> {
                 int value = memoryUnit.get(++addr);
                 execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
             }
             case 0x1F -> execute(Instruction.RRA, memoryUnit);
+            case 0x20 -> {
+                if (!getZeroFlag()) {
+                    byte value = (byte) memoryUnit.get(++addr);
+                    PC--;
+                    setPC(PC + value);
+                }
+            }
+            case 0x21 -> {
+                int value = memoryUnit.get16(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x22 -> {
+                execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+                setHl(getHl() + 1);
+            }
+            case 0x23 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x24 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x25 ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x26 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x27 -> //At some point future me is going to have to debug this
+                //past me is aware of this and is choosing to ignore
+                //the fact that DAA doesn't really work right now
+                    this.adjustBCD();
+            case 0x28 -> {
+                if (getZeroFlag()) {
+                    byte value = (byte) memoryUnit.get(++addr);
+                    PC--;
+                    setPC(PC + value);
+                }
+            }
+            case 0x29 ->
+                    execute(Instruction.ADDHL, new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x2A -> {
+                execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+                setHl(getHl() + 1);
+            }
+            case 0x2B ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x2C ->
+                    execute(Instruction.INC, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x2D ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x2E -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x2F -> execute(Instruction.CPL, memoryUnit);
+            case 0x30 -> {
+                if (!((getCarryFlag() & 0b00010000) == 0b00010000)) {
+                    byte value = (byte) memoryUnit.get(++addr);
+                    PC--;
+                    setPC(PC + value);
+                }
+            }
+            case 0x31 -> {
+                int value = memoryUnit.get16(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x32 -> {
+                execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+                setHl(getHl() - 1);
+            }
+            case 0x33 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
+
+            case 0x34 ->
+                    execute(Instruction.INC, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x35 ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x36 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x37 -> setCarryFlag(true);
+            case 0x38 -> {
+                //JP
+                if ((getCarryFlag() & 0b00010000) == 0b00010000) {
+                    byte value = (byte) memoryUnit.get(++addr);
+                    PC--;
+                    setPC(PC + value);
+                }
+            }
+            case 0x39 ->
+                    execute(Instruction.ADDHL, new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x3A -> {
+                execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+                setHl(getHl() - 1);
+            }
+            case 0x3B ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.SP, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x3C ->
+                    execute(Instruction.INC, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x3D ->
+                    execute(Instruction.DEC, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x3E -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(value), memoryUnit);
+            }
+            case 0x3F -> execute(Instruction.CCF, memoryUnit);
+            case 0x40 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x41 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x42 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x43 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x44 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x45 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x46 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x47 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x48 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x49 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x4A ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x4B ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x4C ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x4D ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x4E ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x4F ->
+                    execute(Instruction.LD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x50 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x51 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x52 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x53 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x54 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x55 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x56 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x57 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x58 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x59 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x5A ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x5B ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x5C ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x5D ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x5E ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x5F ->
+                    execute(Instruction.LD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x60 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x61 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x62 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x63 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x64 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x65 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x66 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x67 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x68 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x69 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x6A ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x6B ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x6C ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x6D ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x6E ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x6F ->
+                    execute(Instruction.LD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x70 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x71 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x72 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x73 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x74 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x75 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x76 -> {
+                //TODO: halt
+            }
+            case 0x77 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x78 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x79 ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x7A ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x7B ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x7C ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x7D ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x7E ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x7F ->
+                    execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x80 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x81 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x82 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x83 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x84 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x85 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x86 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x87 ->
+                    execute(Instruction.ADD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x88 ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x89 ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x8A ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x8B ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x8C ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x8D ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x8E ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x8F ->
+                    execute(Instruction.ADC, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x90 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x91 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x92 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x93 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x94 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x95 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x96 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x97 ->
+                    execute(Instruction.SUB, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x98 ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x99 ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x9A ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x9B ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x9C ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x9D ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0x9E ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0x9F ->
+                    execute(Instruction.SBC, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA0 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA1 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA2 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA3 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA4 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA5 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA6 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0xA7 ->
+                    execute(Instruction.AND, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA8 ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xA9 ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xAA ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xAB ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xAC ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xAD ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xAE ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0xAF ->
+                    execute(Instruction.XOR, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB0 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB1 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB2 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB3 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB4 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB5 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB6 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0xB7 ->
+                    execute(Instruction.OR, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB8 ->
+                    execute(Instruction.CP, new InstructionTarget(Register.B, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xB9 ->
+                    execute(Instruction.CP, new InstructionTarget(Register.C, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xBA ->
+                    execute(Instruction.CP, new InstructionTarget(Register.D, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xBB ->
+                    execute(Instruction.CP, new InstructionTarget(Register.E, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xBC ->
+                    execute(Instruction.CP, new InstructionTarget(Register.H, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xBD ->
+                    execute(Instruction.CP, new InstructionTarget(Register.L, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xBE ->
+                    execute(Instruction.CP, new InstructionTarget(Register.HL, InstructionTarget.TargetType.POINTER), memoryUnit);
+            case 0xBF ->
+                    execute(Instruction.CP, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xC0 -> {
+                //RET, might not work
+                //POPS the stack into PC
+                if (!getZeroFlag()) {
+                    execute(Instruction.POP, new InstructionTarget(Register.PC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+                }
+            }
+            case 0xC1 ->
+                    execute(Instruction.POP, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xC2 -> {
+                if (!getZeroFlag()) {
+                    int value = memoryUnit.get16(++addr);
+                    PC--;
+                    setPC(PC + value);
+                }
+            }
+            case 0xC3 -> {
+                int value = memoryUnit.get16(++addr);
+                PC--;
+                setPC(PC + value);
+            }
+            case 0xC4 -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                //TODO FINISH THIS
+            }
+
+
         }
     }
 
@@ -685,6 +1126,7 @@ public class CPU {
 
     /**
      * Used for testing one step of execution
+     *
      * @param memoryUnit memory
      */
     public void runOneStep(MemoryUnit memoryUnit) {

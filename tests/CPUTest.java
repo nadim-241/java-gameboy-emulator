@@ -451,4 +451,26 @@ class CPUTest {
         CPU.adjustBCD();
         Assertions.assertEquals(0x10, CPU.getA());
     }
+
+    @Test
+    void rstTest() {
+        memory.set(0x05, 0xC7);
+        CPU.setPC(0x05);
+        CPU.runOneStep(memory);
+        Assertions.assertEquals(0x00, CPU.getPC());
+        int shouldBeSix = memory.get(CPU.getSP());
+        Assertions.assertEquals(shouldBeSix, 0x6);
+    }
+
+    @Test
+    void retTest() {
+        memory.set(0x00, 0xC4);
+        CPU.setZeroFlag(false);
+        memory.set(0x01, 0x34);
+        memory.set(0x35, 0xC9);
+        CPU.runOneStep(memory);
+        CPU.runOneStep(memory);
+        Assertions.assertEquals(CPU.getPC(), 0x01);
+    }
+
 }

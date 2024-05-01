@@ -1,6 +1,3 @@
-import javax.crypto.spec.DESedeKeySpec;
-import java.lang.invoke.LambdaForm$Holder;
-
 public class CPU {
 
 
@@ -13,7 +10,7 @@ public class CPU {
     private short h;
     private short l;
 
-    private int SP;
+    private int SP = 0xFFFF - 1;
 
     private int PC;
 
@@ -589,29 +586,32 @@ public class CPU {
                 int swapValue = msHalf | lsHalf;
                 set(instructionTarget, swapValue, memory);
             }
-            case NOP -> {
-            }
-            case JP, JR -> setPC(get(instructionTarget, memory));
-            case RET -> {
-            }
-            case STOP -> {
-            }
-            case RETI -> {
-            }
-            case RST, CALL -> {
-                fetch(get(instructionTarget, memory), memory);
-            }
             case POP -> {
-                int lo = get(instructionTarget, memory);
+                int lo = memory.get(getSP());
                 setSP(getSP() + 1);
-                int hi = get(instructionTarget, memory);
+                int hi = memory.get(getSP());
                 setSP(getSP() + 1);
                 int af = hi | lo;
                 set(instructionTarget, af, memory);
             }
             case PUSH -> {
                 int val = get(instructionTarget, memory);
+                int lo = val & 0xFF;
+                int hi = 0xFF00 >> 8;
+                setSP(getSP() - 1);
+                memory.set(getSP(), hi);
+                setSP(getSP() - 1);
+                memory.set(getSP(), lo);
+            }
+            case PUSH8 -> {
+                int val = get(instructionTarget, memory);
+                setSP(getSP() - 1);
                 memory.set(getSP(), val);
+            }
+            case POP8 -> {
+                int val = memory.get(getSP());
+                setSP(getSP() + 1);
+                set(instructionTarget, val, memory);
             }
 
         }
@@ -1110,9 +1110,34 @@ public class CPU {
                 setPC(PC + value);
             }
             case 0xC4 -> {
-                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
-                //TODO FINISH THIS
+                //Pushes the current PC onto the stack, then jumps to the address
+                //Specified by the byte after this instruction
+                if(!getZeroFlag()) {
+                    execute(Instruction.PUSH8, new InstructionTarget(++addr), memoryUnit);
+                    int value = addr;
+                    setPC(addr);
+                }
             }
+            case 0xC5 -> execute(Instruction.PUSH, new InstructionTarget(Register.BC,
+                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xC6 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.ADD, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xC7 -> {
+                //CALL address 0x00
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x00);
+            }
+            case 0xC8 -> {
+                if(getZeroFlag()) {
+                    execute(Instruction.POP, new InstructionTarget(Register.PC,
+                            InstructionTarget.TargetType.REGISTER), memoryUnit);
+                }
+            }
+            case 0xC9 -> execute(Instruction.POP, new InstructionTarget(Register.PC,
+                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+
 
 
         }

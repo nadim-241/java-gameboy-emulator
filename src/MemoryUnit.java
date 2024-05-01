@@ -13,7 +13,7 @@ public class MemoryUnit {
             throw new IndexOutOfBoundsException("Memory address " + loAddr + " was outside the specified range");
         }
         int lo = memory[loAddr] & 0xFF;
-        int hi = memory[loAddr + 1] << 4;
+        int hi = memory[loAddr + 1] << 8;
         return lo | hi;
     }
 

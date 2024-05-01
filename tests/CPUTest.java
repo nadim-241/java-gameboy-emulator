@@ -467,10 +467,32 @@ class CPUTest {
         memory.set(0x00, 0xC4);
         CPU.setZeroFlag(false);
         memory.set(0x01, 0x34);
-        memory.set(0x35, 0xC9);
+        memory.set(0x34, 0xC9);
         CPU.runOneStep(memory);
         CPU.runOneStep(memory);
         Assertions.assertEquals(CPU.getPC(), 0x01);
+    }
+
+    @Test
+    void testJump() {
+        //0xCA - JP Z, u16
+        memory.set(0x00, 0xCA);
+        memory.set(0x01, 0x10);
+        memory.set(0x02, 0x01);
+        CPU.setZeroFlag(true);
+        CPU.runOneStep(memory);
+        Assertions.assertEquals(0x0110, CPU.getPC());
+    }
+
+    @Test
+    void testCall() {
+        memory.set(0x00, 0xCC);
+        memory.set(0x01, 0x10);
+        CPU.setZeroFlag(true);
+        memory.set(0x02, 0xBB);
+        CPU.runOneStep(memory);
+        Assertions.assertEquals(0x10BB, CPU.getPC());
+        Assertions.assertEquals(0x03, memory.get16(CPU.getSP()));
     }
 
 }

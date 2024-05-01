@@ -1114,8 +1114,7 @@ public class CPU {
                 //Specified by the byte after this instruction
                 if(!getZeroFlag()) {
                     execute(Instruction.PUSH8, new InstructionTarget(++addr), memoryUnit);
-                    int value = addr;
-                    setPC(addr);
+                    setPC(memoryUnit.get(addr));
                 }
             }
             case 0xC5 -> execute(Instruction.PUSH, new InstructionTarget(Register.BC,
@@ -1126,7 +1125,7 @@ public class CPU {
             }
             case 0xC7 -> {
                 //CALL address 0x00
-                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                execute(Instruction.PUSH8, new InstructionTarget(++addr), memoryUnit);
                 setPC(0x00);
             }
             case 0xC8 -> {
@@ -1137,9 +1136,22 @@ public class CPU {
             }
             case 0xC9 -> execute(Instruction.POP, new InstructionTarget(Register.PC,
                     InstructionTarget.TargetType.REGISTER), memoryUnit);
-
-
-
+            case 0xCA -> {
+                if(getZeroFlag()) {
+                    int newAddr = memoryUnit.get16(++addr);
+                    setPC(newAddr);
+                }
+            }
+            case 0xCB -> {
+                //TODO: Prefix Codes CB
+            }
+            case 0xCC -> {
+                if(getZeroFlag()) {
+                    execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                    setPC(memoryUnit.get16(++addr));
+                    //TODO This doesn't work
+                }
+            }
         }
     }
 

@@ -491,7 +491,7 @@ class CPUTest {
         CPU.setZeroFlag(true);
         memory.set(0x02, 0xBB);
         CPU.runOneStep(memory);
-        Assertions.assertEquals(0x10BB, CPU.getPC());
+        Assertions.assertEquals(0xBB10, CPU.getPC());
         Assertions.assertEquals(0x03, memory.get16(CPU.getSP()));
     }
 

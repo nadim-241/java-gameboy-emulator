@@ -597,7 +597,7 @@ public class CPU {
             case PUSH -> {
                 int val = get(instructionTarget, memory);
                 int lo = val & 0xFF;
-                int hi = 0xFF00 >> 8;
+                int hi = (val & 0xFF00) >> 8;
                 setSP(getSP() - 1);
                 memory.set(getSP(), hi);
                 setSP(getSP() - 1);
@@ -1147,10 +1147,13 @@ public class CPU {
             }
             case 0xCC -> {
                 if(getZeroFlag()) {
-                    execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
-                    setPC(memoryUnit.get16(++addr));
-                    //TODO This doesn't work
+                    execute(Instruction.PUSH, new InstructionTarget(addr + 3), memoryUnit);
+                    setPC(memoryUnit.get16(addr + 1));
                 }
+            }
+            case 0xCD -> {
+                execute(Instruction.PUSH, new InstructionTarget(addr + 3), memoryUnit);
+                setPC(memoryUnit.get16(addr + 1));
             }
         }
     }

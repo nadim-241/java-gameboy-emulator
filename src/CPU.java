@@ -243,7 +243,8 @@ public class CPU {
                 default:
                     throw new RuntimeException("Invalid instruction target " + target);
             }
-        } else if (target.getTargetType() == InstructionTarget.TargetType.POINTER) {
+        }
+        else if (target.getTargetType() == InstructionTarget.TargetType.POINTER) {
             switch (target.getRegister()) {
                 case A -> {
                     memory.set(getA(), value);
@@ -290,6 +291,9 @@ public class CPU {
                 }
                 case PC -> {
                     memory.set(getPC(), value);
+                }
+                case UNUSED -> {
+                    memory.set(target.getImmediateValue(), value);
                 }
             }
         } else {
@@ -651,7 +655,6 @@ public class CPU {
 
     public void decode(int opcode, MemoryUnit memoryUnit, int addr) {
         switch (opcode) {
-            default -> throw new IllegalStateException("Unexpected value: " + opcode);
             case 0x0 ->
                     execute(Instruction.NOP, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0x1 -> {
@@ -1113,7 +1116,7 @@ public class CPU {
                 //Pushes the current PC onto the stack, then jumps to the address
                 //Specified by the byte after this instruction
                 if(!getZeroFlag()) {
-                    execute(Instruction.PUSH8, new InstructionTarget(++addr), memoryUnit);
+                    execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
                     setPC(memoryUnit.get(addr));
                 }
             }
@@ -1155,6 +1158,93 @@ public class CPU {
                 execute(Instruction.PUSH, new InstructionTarget(addr + 3), memoryUnit);
                 setPC(memoryUnit.get16(addr + 1));
             }
+            case 0xCE -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.ADC, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xCF -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x08);
+            }
+            case 0xD0 -> {
+                if (((getCarryFlag() & 0b00010000) == 0)) {
+                    execute(Instruction.POP, new InstructionTarget(Register.PC, InstructionTarget.TargetType.REGISTER), memoryUnit);
+                }
+            }
+            case 0xD1 -> execute(Instruction.POP, new InstructionTarget(Register.DE,
+                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xD2 -> {
+                if(((getCarryFlag() & 0b00010000) == 0)) {
+                    int value = memoryUnit.get16(++addr);
+                    setPC(value);
+                }
+            }
+            case 0xD4 -> {
+                if (((getCarryFlag() & 0b00010000) == 0)) {
+                    execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                    setPC(memoryUnit.get(addr));
+                }
+            }
+
+            case 0xD5 -> execute(Instruction.PUSH, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER),
+                    memoryUnit);
+            case 0xD6 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.SUB, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xD7 -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x10);
+            }
+            case 0xD8 -> {
+                if ((getCarryFlag() & 0b00010000) != 0) {
+                    execute(Instruction.POP, new InstructionTarget(Register.PC,
+                            InstructionTarget.TargetType.REGISTER), memoryUnit);
+                }
+            }
+            case 0xD9 -> {
+                //TODO: Set interrupt flag here
+                execute(Instruction.POP, new InstructionTarget(Register.PC,
+                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            }
+            case 0xDA -> {
+                if ((getCarryFlag() & 0b00010000) != 0) {
+                    setPC(memoryUnit.get(++addr));
+                }
+            }
+            case 0xDC -> {
+                if((getCarryFlag() & 0b00010000) != 0){
+                    execute(Instruction.PUSH, new InstructionTarget(addr + 3), memoryUnit);
+                    setPC(memoryUnit.get16(addr + 1));
+                }
+            }
+            case 0xDE -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.SBC, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xDF -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x18);
+            }
+            case 0xE0 -> {
+                int target = 0xFF00 + memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(target, InstructionTarget.TargetType.POINTER),
+                        new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            }
+            case 0xE1 -> execute(Instruction.POP, new InstructionTarget(Register.HL,
+                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xE2 -> {
+                int target = 0xFF00 + getC();
+                execute(Instruction.LD, new InstructionTarget(target, InstructionTarget.TargetType.POINTER),
+                        new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            }
+            case 0xE5 -> execute(Instruction.PUSH, new InstructionTarget(Register.HL,
+                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xE6 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.AND, new InstructionTarget(value), memoryUnit);
+            }
+            default -> throw new IllegalArgumentException("Unrecognised Opcode " + opcode + " at memory address " + addr);
         }
     }
 

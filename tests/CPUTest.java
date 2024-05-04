@@ -495,4 +495,14 @@ class CPUTest {
         Assertions.assertEquals(0x03, memory.get16(CPU.getSP()));
     }
 
+    @Test
+    void testJp16() {
+        memory.set(0x00, 0xD2);
+        memory.set(0x01, 0x45);
+        memory.set(0x02, 0x33);
+        CPU.runOneStep(memory);
+        Assertions.assertEquals(CPU.getPC(), 0x3345);
+    }
+
+
 }

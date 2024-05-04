@@ -27,6 +27,12 @@ public class InstructionTarget {
         this.immediateValue = immediateValue;
     }
 
+    public InstructionTarget(int immediateValue, TargetType t) {
+        this.targetType = TargetType.POINTER;
+        this.targetRegister = Register.UNUSED;
+        this.immediateValue = immediateValue;
+    }
+
     public TargetType getTargetType() {
         return this.targetType;
     }

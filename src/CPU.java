@@ -261,55 +261,21 @@ public class CPU {
             }
         } else if (target.getTargetType() == InstructionTarget.TargetType.POINTER) {
             switch (target.getRegister()) {
-                case A -> {
-                    memory.set(getA(), value);
-                }
-                case B -> {
-                    memory.set(getB(), value);
-                }
-                case C -> {
-                    memory.set(getC(), value);
-                }
-                case D -> {
-                    memory.set(getD(), value);
-                }
-                case E -> {
-                    memory.set(getE(), value);
-                }
-                case F -> {
-                    memory.set(getF(), value);
-                }
-                case H -> {
-                    memory.set(getH(), value);
-                }
-                case L -> {
-                    memory.set(getL(), value);
-                }
-                case AF -> {
-                    // Handle 16-bit register AF directly using your method
-                    memory.set(getAf(), value);
-                }
-                case BC -> {
-                    // Handle 16-bit register BC directly using your method
-                    memory.set(getBc(), value);
-                }
-                case DE -> {
-                    // Handle 16-bit register DE directly using your method
-                    memory.set(getDe(), value);
-                }
-                case HL -> {
-                    // Handle register pair HL directly using your method (likely doesn't need combining)
-                    memory.set(getHl(), value);
-                }
-                case SP -> {
-                    memory.set(getSP(), value);
-                }
-                case PC -> {
-                    memory.set(getPC(), value);
-                }
-                case UNUSED -> {
-                    memory.set(target.getImmediateValue(), value);
-                }
+                case A -> memory.set(getA(), value);
+                case B -> memory.set(getB(), value);
+                case C -> memory.set(getC(), value);
+                case D -> memory.set(getD(), value);
+                case E -> memory.set(getE(), value);
+                case F -> memory.set(getF(), value);
+                case H -> memory.set(getH(), value);
+                case L -> memory.set(getL(), value);
+                case AF -> memory.set(getAf(), value);
+                case BC -> memory.set(getBc(), value);
+                case DE -> memory.set(getDe(), value);
+                case HL -> memory.set(getHl(), value);
+                case SP -> memory.set(getSP(), value);
+                case PC -> memory.set(getPC(), value);
+                case UNUSED -> memory.set(target.getImmediateValue(), value);
             }
         } else {
             memory.set(target.getImmediateValue(), value);
@@ -420,11 +386,7 @@ public class CPU {
     }
 
     private void sub(int value) {
-        int result = getA() - value;
-        setSubtractionFlag(true);
-        setZeroFlag(result == 0);
-        setCarryFlag(result > Constants.UINT_8_MAX || result < 0);
-        setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
+        int result = subHelper(value);
 
         if (result < 0) {
             result += 256;
@@ -433,12 +395,17 @@ public class CPU {
         setA((short) (result & 0xFF));
     }
 
-    private void sbc(int value) {
+    private int subHelper(int value) {
         int result = getA() - value;
         setSubtractionFlag(true);
         setZeroFlag(result == 0);
         setCarryFlag(result > Constants.UINT_8_MAX || result < 0);
         setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
+        return result;
+    }
+
+    private void sbc(int value) {
+        int result = subHelper(value);
         result -= getCarryFlag();
         if (result < 0) {
             result += 256;
@@ -447,11 +414,7 @@ public class CPU {
     }
 
     private void cp(int value) {
-        int result = getA() - value;
-        setSubtractionFlag(true);
-        setZeroFlag(result == 0);
-        setCarryFlag(result > Constants.UINT_8_MAX || result < 0);
-        setHalfCarryFlag((((getA() & 0xF) - (value & 0xF)) & 0x10) > 0xF);
+        subHelper(value);
     }
 
     /**
@@ -479,8 +442,6 @@ public class CPU {
      * <a href="https://rgbds.gbdev.io/docs/v0.7.0/gbz80.7#ADC_A,r8">see here</a>
      * for more info. LOAD will be done somewhere else
      *
-     * @param instruction
-     * @param instructionTarget
      */
     public void execute(Instruction instruction, InstructionTarget instructionTarget, MemoryUnit memory) {
         switch (instruction) {
@@ -1151,9 +1112,7 @@ public class CPU {
                     setPC(newAddr);
                 }
             }
-            case 0xCB -> {
-                //TODO: Prefix Codes CB
-            }
+            case 0xCB -> decodeCB(memoryUnit.get(++addr), memoryUnit, addr);
             case 0xCC -> {
                 if (getZeroFlag()) {
                     execute(Instruction.PUSH, new InstructionTarget(addr + 3), memoryUnit);
@@ -1279,9 +1238,7 @@ public class CPU {
                         new InstructionTarget(target, InstructionTarget.TargetType.POINTER), memoryUnit);
 
             }
-            case 0xF3 -> {
-                setInterrupt(false);
-            }
+            case 0xF3 -> setInterrupt(false);
             case 0xF5 -> execute(Instruction.PUSH, new InstructionTarget(Register.AF,
                     InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xF6 -> {
@@ -1316,6 +1273,11 @@ public class CPU {
             }
             default ->
                     throw new IllegalArgumentException("Unrecognised Opcode " + opcode + " at memory address " + addr);
+        }
+    }
+
+    public void decodeCB(int opcode, MemoryUnit memoryUnit, int addr) {
+        switch(opcode) {
         }
     }
 

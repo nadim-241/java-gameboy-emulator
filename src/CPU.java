@@ -9,6 +9,7 @@ public class CPU {
     private short f;
     private short h;
     private short l;
+    private boolean interrupt = false;
 
     private int SP = 0xFFFF - 1;
 
@@ -18,84 +19,99 @@ public class CPU {
         return (f & 0b10000000) == 0b10000000;
     }
 
-    public void setPC(int value) {
-        PC = value;
+    public void setZeroFlag(boolean value) {
+        if (value) {
+            f = (short) (f | 0b10000000);
+        } else {
+            f = (short) (f & 0b01111111);
+        }
+    }
+    public boolean getInterrupt() {
+        return interrupt;
+    }
+
+    public void setInterrupt(boolean value) {
+        interrupt = value;
     }
 
     public int getPC() {
         return PC;
     }
 
-    public void setSP(int value) {
-        SP = value;
+    public void setPC(int value) {
+        PC = value;
     }
 
     public int getSP() {
         return SP;
     }
 
-    public void setA(short value) {
-        a = (short) (value & 0xFF);
+    public void setSP(int value) {
+        SP = value;
     }
 
     public short getA() {
         return (short) (a & 0xFF);
     }
 
-    public void setB(short value) {
-        b = (short) (value & 0xFF);
+    public void setA(short value) {
+        a = (short) (value & 0xFF);
     }
 
     public short getB() {
         return (short) (b & 0xFF);
     }
 
-    public void setC(short value) {
-        c = (short) (value & 0xFF);
+    public void setB(short value) {
+        b = (short) (value & 0xFF);
     }
 
     public short getC() {
         return (short) (c & 0xFF);
     }
 
-    public void setD(short value) {
-        d = (short) (value & 0xFF);
+    public void setC(short value) {
+        c = (short) (value & 0xFF);
     }
 
     public short getD() {
         return (short) (d & 0xFF);
     }
 
-    public void setE(short value) {
-        e = (short) (value & 0xFF);
+    public void setD(short value) {
+        d = (short) (value & 0xFF);
     }
 
     public short getE() {
         return (short) (e & 0xFF);
     }
 
-    public void setF(short value) {
-        f = (short) (value & 0xF0);
+    public void setE(short value) {
+        e = (short) (value & 0xFF);
     }
 
     public short getF() {
         return (short) (f & 0xFF);
     }
 
-    public void setH(short value) {
-        h = (short) (value & 0xFF);
+    public void setF(short value) {
+        f = (short) (value & 0xF0);
     }
 
     public short getH() {
         return (short) (h & 0xFF);
     }
 
-    public void setL(short value) {
-        l = (short) (value & 0xFF);
+    public void setH(short value) {
+        h = (short) (value & 0xFF);
     }
 
     public short getL() {
         return (short) (l & 0xFF);
+    }
+
+    public void setL(short value) {
+        l = (short) (value & 0xFF);
     }
 
     public int get(InstructionTarget target, MemoryUnit memory) {
@@ -243,8 +259,7 @@ public class CPU {
                 default:
                     throw new RuntimeException("Invalid instruction target " + target);
             }
-        }
-        else if (target.getTargetType() == InstructionTarget.TargetType.POINTER) {
+        } else if (target.getTargetType() == InstructionTarget.TargetType.POINTER) {
             switch (target.getRegister()) {
                 case A -> {
                     memory.set(getA(), value);
@@ -341,16 +356,16 @@ public class CPU {
         setL((short) (value & 0x00FF));
     }
 
+    public short getCarryFlag() {
+        return (short) (f & 0b00010000);
+    }
+
     public void setCarryFlag(boolean value) {
         if (value) {
             f = (short) (f | 0b00010000);
         } else {
             f = (short) (f & 0b11101111);
         }
-    }
-
-    public short getCarryFlag() {
-        return (short) (f & 0b00010000);
     }
 
     public short getHalfCarryFlag() {
@@ -370,14 +385,6 @@ public class CPU {
             f = (short) (f | 0b01000000);
         } else {
             f = (short) (f & 0b10111111);
-        }
-    }
-
-    public void setZeroFlag(boolean value) {
-        if (value) {
-            f = (short) (f | 0b10000000);
-        } else {
-            f = (short) (f & 0b01111111);
         }
     }
 
@@ -1115,13 +1122,13 @@ public class CPU {
             case 0xC4 -> {
                 //Pushes the current PC onto the stack, then jumps to the address
                 //Specified by the byte after this instruction
-                if(!getZeroFlag()) {
+                if (!getZeroFlag()) {
                     execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
                     setPC(memoryUnit.get(addr));
                 }
             }
-            case 0xC5 -> execute(Instruction.PUSH, new InstructionTarget(Register.BC,
-                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xC5 ->
+                    execute(Instruction.PUSH, new InstructionTarget(Register.BC, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xC6 -> {
                 int value = memoryUnit.get(++addr);
                 execute(Instruction.ADD, new InstructionTarget(value), memoryUnit);
@@ -1132,15 +1139,14 @@ public class CPU {
                 setPC(0x00);
             }
             case 0xC8 -> {
-                if(getZeroFlag()) {
-                    execute(Instruction.POP, new InstructionTarget(Register.PC,
-                            InstructionTarget.TargetType.REGISTER), memoryUnit);
+                if (getZeroFlag()) {
+                    execute(Instruction.POP, new InstructionTarget(Register.PC, InstructionTarget.TargetType.REGISTER), memoryUnit);
                 }
             }
-            case 0xC9 -> execute(Instruction.POP, new InstructionTarget(Register.PC,
-                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xC9 ->
+                    execute(Instruction.POP, new InstructionTarget(Register.PC, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xCA -> {
-                if(getZeroFlag()) {
+                if (getZeroFlag()) {
                     int newAddr = memoryUnit.get16(++addr);
                     setPC(newAddr);
                 }
@@ -1149,7 +1155,7 @@ public class CPU {
                 //TODO: Prefix Codes CB
             }
             case 0xCC -> {
-                if(getZeroFlag()) {
+                if (getZeroFlag()) {
                     execute(Instruction.PUSH, new InstructionTarget(addr + 3), memoryUnit);
                     setPC(memoryUnit.get16(addr + 1));
                 }
@@ -1171,10 +1177,10 @@ public class CPU {
                     execute(Instruction.POP, new InstructionTarget(Register.PC, InstructionTarget.TargetType.REGISTER), memoryUnit);
                 }
             }
-            case 0xD1 -> execute(Instruction.POP, new InstructionTarget(Register.DE,
-                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xD1 ->
+                    execute(Instruction.POP, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xD2 -> {
-                if(((getCarryFlag() & 0b00010000) == 0)) {
+                if (((getCarryFlag() & 0b00010000) == 0)) {
                     int value = memoryUnit.get16(++addr);
                     setPC(value);
                 }
@@ -1186,8 +1192,8 @@ public class CPU {
                 }
             }
 
-            case 0xD5 -> execute(Instruction.PUSH, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER),
-                    memoryUnit);
+            case 0xD5 ->
+                    execute(Instruction.PUSH, new InstructionTarget(Register.DE, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xD6 -> {
                 int value = memoryUnit.get(++addr);
                 execute(Instruction.SUB, new InstructionTarget(value), memoryUnit);
@@ -1198,14 +1204,12 @@ public class CPU {
             }
             case 0xD8 -> {
                 if ((getCarryFlag() & 0b00010000) != 0) {
-                    execute(Instruction.POP, new InstructionTarget(Register.PC,
-                            InstructionTarget.TargetType.REGISTER), memoryUnit);
+                    execute(Instruction.POP, new InstructionTarget(Register.PC, InstructionTarget.TargetType.REGISTER), memoryUnit);
                 }
             }
             case 0xD9 -> {
-                //TODO: Set interrupt flag here
-                execute(Instruction.POP, new InstructionTarget(Register.PC,
-                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+                setInterrupt(true);
+                execute(Instruction.POP, new InstructionTarget(Register.PC, InstructionTarget.TargetType.REGISTER), memoryUnit);
             }
             case 0xDA -> {
                 if ((getCarryFlag() & 0b00010000) != 0) {
@@ -1213,7 +1217,7 @@ public class CPU {
                 }
             }
             case 0xDC -> {
-                if((getCarryFlag() & 0b00010000) != 0){
+                if ((getCarryFlag() & 0b00010000) != 0) {
                     execute(Instruction.PUSH, new InstructionTarget(addr + 3), memoryUnit);
                     setPC(memoryUnit.get16(addr + 1));
                 }
@@ -1228,23 +1232,90 @@ public class CPU {
             }
             case 0xE0 -> {
                 int target = 0xFF00 + memoryUnit.get(++addr);
-                execute(Instruction.LD, new InstructionTarget(target, InstructionTarget.TargetType.POINTER),
-                        new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+                execute(Instruction.LD, new InstructionTarget(target, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
             }
-            case 0xE1 -> execute(Instruction.POP, new InstructionTarget(Register.HL,
-                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xE1 ->
+                    execute(Instruction.POP, new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xE2 -> {
                 int target = 0xFF00 + getC();
-                execute(Instruction.LD, new InstructionTarget(target, InstructionTarget.TargetType.POINTER),
-                        new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+                execute(Instruction.LD, new InstructionTarget(target, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
             }
-            case 0xE5 -> execute(Instruction.PUSH, new InstructionTarget(Register.HL,
-                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xE5 ->
+                    execute(Instruction.PUSH, new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER), memoryUnit);
             case 0xE6 -> {
                 int value = memoryUnit.get(++addr);
                 execute(Instruction.AND, new InstructionTarget(value), memoryUnit);
             }
-            default -> throw new IllegalArgumentException("Unrecognised Opcode " + opcode + " at memory address " + addr);
+            case 0xE7 -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x20);
+            }
+            case 0xE8 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.ADD_SP, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xE9 -> setPC(getHl());
+            case 0xEA -> {
+                int value = memoryUnit.get16(++addr);
+                execute(Instruction.LD, new InstructionTarget(value, InstructionTarget.TargetType.POINTER), new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            }
+            case 0xEE -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.XOR, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xEF -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x28);
+            }
+            case 0xF0 -> {
+                int target = 0xFF00 + memoryUnit.get(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER),
+                        new InstructionTarget(target, InstructionTarget.TargetType.POINTER), memoryUnit);
+            }
+            case 0xF1 -> execute(Instruction.POP, new InstructionTarget(Register.AF, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xF2 -> {
+                int target = 0xFF00 + getC();
+                execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER),
+                        new InstructionTarget(target, InstructionTarget.TargetType.POINTER), memoryUnit);
+
+            }
+            case 0xF3 -> {
+                setInterrupt(false);
+            }
+            case 0xF5 -> execute(Instruction.PUSH, new InstructionTarget(Register.AF,
+                    InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xF6 -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.OR, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xF7 -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x30);
+            }
+            case 0xF8 -> {
+                int value = memoryUnit.get(++addr) + getSP();
+                execute(Instruction.LD, new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER),
+                        new InstructionTarget(value), memoryUnit);
+            }
+            case 0xF9 -> execute(Instruction.LD, new InstructionTarget(Register.SP,
+                            InstructionTarget.TargetType.REGISTER),
+                    new InstructionTarget(Register.HL, InstructionTarget.TargetType.REGISTER), memoryUnit);
+            case 0xFA -> {
+                int value = memoryUnit.get16(++addr);
+                execute(Instruction.LD, new InstructionTarget(Register.A, InstructionTarget.TargetType.REGISTER),
+                        new InstructionTarget(value, InstructionTarget.TargetType.POINTER), memoryUnit);
+            }
+            case 0xFB -> setInterrupt(true);
+            case 0xFE -> {
+                int value = memoryUnit.get(++addr);
+                execute(Instruction.CP, new InstructionTarget(value), memoryUnit);
+            }
+            case 0xFF -> {
+                execute(Instruction.PUSH, new InstructionTarget(++addr), memoryUnit);
+                setPC(0x38);
+            }
+            default ->
+                    throw new IllegalArgumentException("Unrecognised Opcode " + opcode + " at memory address " + addr);
         }
     }
 

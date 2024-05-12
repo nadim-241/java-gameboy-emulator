@@ -504,5 +504,13 @@ class CPUTest {
         Assertions.assertEquals(CPU.getPC(), 0x3345);
     }
 
+    @Test
+    void testJpHl() {
+        memory.set(0x00, 0xE9);
+        CPU.setHl(0x10);
+        CPU.runOneStep(memory);
+        Assertions.assertEquals(CPU.getPC(), 0x10);
+    }
+
 
 }
